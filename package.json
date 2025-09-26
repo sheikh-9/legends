@@ -1,0 +1,23 @@
+{
+  "name": "fifa-tournament-system",
+  "version": "1.0.0",
+  "description": "نظام إدارة بطولات فيفا 26",
+  "main": "index.html",
+  "scripts": {
+    "dev": "python -m http.server 8000",
+    "start": "python -m http.server 8000",
+    "build": "echo 'Static site - no build needed'",
+    "preview": "python -m http.server 8000"
+  },
+  "keywords": [
+    "fifa",
+    "tournament",
+    "football",
+    "gaming",
+    "arabic"
+  ],
+  "author": "FIFA Tournament System",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
