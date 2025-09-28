@@ -228,46 +228,93 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3>لوحة الإدارة</h3>
+                <div class="header-actions">
+                    <button id="logoutBtn" class="logout-btn" style="display: none;">
+                        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+                    </button>
+                </div>
                 <span class="close">&times;</span>
             </div>
-            <div class="admin-tabs">
-                <button class="tab-btn active" data-tab="registrations">طلبات التسجيل</button>
-                <button class="tab-btn" data-tab="tournaments">إدارة البطولات</button>
-                <button class="tab-btn" data-tab="results">النتائج</button>
-            </div>
-            <div class="tab-content">
-                <!-- Registration Requests -->
-                <div id="registrations" class="tab-pane active">
-                    <h4>طلبات التسجيل المعلقة</h4>
-                    <div id="pendingRegistrations" class="requests-container">
-                        <!-- Will be populated by JavaScript -->
+            
+            <!-- Admin Login Form -->
+            <form id="adminLoginForm" class="admin-login">
+                <div class="login-container">
+                    <h4>تسجيل دخول المدير</h4>
+                    <div class="form-group">
+                        <label for="adminUsername">اسم المستخدم</label>
+                        <input type="text" id="adminUsername" required>
                     </div>
-                </div>
-                
-                <!-- Tournament Management -->
-                <div id="tournaments-tab" class="tab-pane">
-                    <h4>إدارة البطولات</h4>
-                    <div class="tournament-controls">
-                        <button class="control-btn" onclick="createTournament()">إنشاء بطولة جديدة</button>
-                        <button class="control-btn" onclick="updateTournamentStatus()">تحديث حالة البطولة</button>
+                    <div class="form-group">
+                        <label for="adminPassword">كلمة المرور</label>
+                        <input type="password" id="adminPassword" required>
                     </div>
+                    <button type="submit" class="login-btn">
+                        <i class="fas fa-sign-in-alt"></i> دخول
+                    </button>
                 </div>
-                
-                <!-- Results Management -->
-                <div id="results" class="tab-pane">
-                    <h4>إدارة النتائج</h4>
-                    <div class="results-form">
-                        <select id="matchTournament">
-                            <option value="">اختر البطولة</option>
-                            <option value="league">بطولة الدوري</option>
-                            <option value="online">فيفا عن بعد</option>
-                            <option value="offline">فيفا حضوري</option>
-                        </select>
-                        <input type="text" id="team1" placeholder="الفريق الأول">
-                        <input type="text" id="team2" placeholder="الفريق الثاني">
-                        <input type="number" id="score1" placeholder="نتيجة الفريق الأول">
-                        <input type="number" id="score2" placeholder="نتيجة الفريق الثاني">
-                        <button onclick="addResult()">إضافة النتيجة</button>
+            </form>
+            
+            <!-- Admin Content -->
+            <div id="adminContent" style="display: none;">
+                <div class="admin-tabs">
+                    <button class="tab-btn active" data-tab="registrations">طلبات التسجيل</button>
+                    <button class="tab-btn" data-tab="tournaments">إدارة البطولات</button>
+                    <button class="tab-btn" data-tab="results">النتائج</button>
+                    <button class="tab-btn" data-tab="matches">المباريات</button>
+                </div>
+                <div class="tab-content">
+                    <!-- Registration Requests -->
+                    <div id="registrations" class="tab-pane active">
+                        <h4>طلبات التسجيل المعلقة</h4>
+                        <div id="pendingRegistrations" class="requests-container">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Tournament Management -->
+                    <div id="tournaments-tab" class="tab-pane">
+                        <h4>إدارة البطولات</h4>
+                        <div class="tournament-controls">
+                            <button class="control-btn" onclick="createTournament()">إنشاء بطولة جديدة</button>
+                            <button class="control-btn" onclick="loadTournamentData()">تحديث البيانات</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Results Management -->
+                    <div id="results" class="tab-pane">
+                        <h4>إضافة نتيجة جديدة</h4>
+                        <div class="results-form">
+                            <select id="matchTournament">
+                                <option value="">اختر البطولة</option>
+                                <option value="league">بطولة الدوري</option>
+                                <option value="online">فيفا عن بعد</option>
+                                <option value="offline">فيفا حضوري</option>
+                            </select>
+                            <input type="text" id="team1" placeholder="الفريق الأول">
+                            <input type="text" id="team2" placeholder="الفريق الثاني">
+                            <input type="number" id="score1" placeholder="نتيجة الفريق الأول">
+                            <input type="number" id="score2" placeholder="نتيجة الفريق الثاني">
+                            <button onclick="addResult()">إضافة النتيجة</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Matches Management -->
+                    <div id="matches" class="tab-pane">
+                        <h4>إدارة المباريات</h4>
+                        <div class="matches-container">
+                            <div class="matches-section">
+                                <h5>مباريات الدوري</h5>
+                                <div id="leagueMatches" class="matches-list">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                            <div class="matches-section">
+                                <h5>مباريات الإقصاء</h5>
+                                <div id="knockoutMatches" class="matches-list">
+                                    <!-- Will be populated by JavaScript -->
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
