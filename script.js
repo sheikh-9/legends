@@ -131,6 +131,7 @@ function showAdminLogin() {
 function showAdminContent() {
     adminLoginForm.style.display = 'none';
     adminContent.style.display = 'block';
+    document.getElementById('logoutBtn').style.display = 'block';
 }
 
 // Admin Authentication
@@ -154,6 +155,7 @@ function handleAdminLogin(e) {
 function handleAdminLogout() {
     isAdminLoggedIn = false;
     showAdminLogin();
+    document.getElementById('logoutBtn').style.display = 'none';
     showMessage('تم تسجيل الخروج بنجاح', 'success');
 }
 
@@ -322,6 +324,11 @@ async function loadTournamentData() {
     } catch (error) {
         console.error('Error loading tournament data:', error);
     }
+    
+    // Load matches for admin panel
+    if (isAdminLoggedIn) {
+        loadMatchesForAdmin();
+    }
 }
 
 async function loadLeagueStandings() {
@@ -419,6 +426,110 @@ function displayTournamentBracket(containerId, matches) {
             `).join('')}
         </div>
     `).join('');
+}
+
+// Load matches for admin management
+async function loadMatchesForAdmin() {
+    if (!isAdminLoggedIn) return;
+    
+    try {
+        // Load league matches
+        const { data: leagueMatches, error: leagueError } = await supabase
+            .from('league_matches')
+            .select('*')
+            .order('match_date', { ascending: false });
+
+        if (leagueError) throw leagueError;
+
+        displayMatchesForAdmin('leagueMatches', leagueMatches || [], 'league');
+
+        // Load knockout matches
+        const { data: knockoutMatches, error: knockoutError } = await supabase
+            .from('knockout_matches')
+            .select('*')
+            .order('match_date', { ascending: false });
+
+        if (knockoutError) throw knockoutError;
+
+        displayMatchesForAdmin('knockoutMatches', knockoutMatches || [], 'knockout');
+    } catch (error) {
+        console.error('Error loading matches for admin:', error);
+    }
+}
+
+function displayMatchesForAdmin(containerId, matches, type) {
+    const container = document.getElementById(containerId);
+    
+    if (matches.length === 0) {
+        container.innerHTML = '<p>لا توجد مباريات</p>';
+        return;
+    }
+
+    container.innerHTML = matches.map(match => `
+        <div class="match-card">
+            <div class="match-info">
+                <div class="match-teams">
+                    ${match.team1_name} VS ${match.team2_name}
+                </div>
+                <div class="match-score">
+                    ${match.team1_score !== null ? `${match.team1_score} - ${match.team2_score}` : 'لم تحدد النتيجة'}
+                </div>
+                <div class="match-date">
+                    ${new Date(match.match_date).toLocaleDateString('ar-SA')}
+                </div>
+            </div>
+            <div class="match-actions">
+                <button class="edit-btn" onclick="editMatch('${match.id}', '${type}')">
+                    <i class="fas fa-edit"></i> تعديل
+                </button>
+                <button class="delete-btn" onclick="deleteResult('${match.id}', '${type}')">
+                    <i class="fas fa-trash"></i> حذف
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Edit match function
+async function editMatch(matchId, matchType) {
+    if (!isAdminLoggedIn) {
+        showMessage('غير مصرح لك بهذا الإجراء', 'error');
+        return;
+    }
+    
+    const newTeam1 = prompt('اسم الفريق الأول:');
+    const newTeam2 = prompt('اسم الفريق الثاني:');
+    const newScore1 = prompt('نتيجة الفريق الأول:');
+    const newScore2 = prompt('نتيجة الفريق الثاني:');
+    
+    if (newTeam1 && newTeam2 && newScore1 !== null && newScore2 !== null) {
+        try {
+            const tableName = matchType === 'league' ? 'league_matches' : 'knockout_matches';
+            const { error } = await supabase
+                .from(tableName)
+                .update({
+                    team1_name: newTeam1,
+                    team2_name: newTeam2,
+                    team1_score: parseInt(newScore1),
+                    team2_score: parseInt(newScore2)
+                })
+                .eq('id', matchId);
+
+            if (error) throw error;
+
+            showMessage('تم تحديث المباراة بنجاح', 'success');
+            loadTournamentData();
+            loadMatchesForAdmin();
+            
+            // إعادة حساب ترتيب الدوري إذا كانت مباراة دوري
+            if (matchType === 'league') {
+                await recalculateLeagueStandings();
+            }
+        } catch (error) {
+            console.error('Error updating match:', error);
+            showMessage('خطأ في تحديث المباراة', 'error');
+        }
+    }
 }
 
 async function updateTournamentStatuses() {
