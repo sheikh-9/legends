@@ -1,6 +1,6 @@
 // Supabase Configuration
-const SUPABASE_URL = 'https://fgoylqtdqhzduuezctrf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+const SUPABASE_URL = 'https://your-project.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key-here';
 
 // Initialize Supabase client
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -9,6 +9,13 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 let currentSlide = 0;
 const slides = document.querySelectorAll('.slide');
 let slideInterval;
+let isAdminLoggedIn = false;
+
+// Admin credentials (في التطبيق الحقيقي، يجب استخدام نظام مصادقة أكثر أماناً)
+const ADMIN_CREDENTIALS = {
+    username: 'admin',
+    password: 'fifa2026admin'
+};
 
 // DOM Elements
 const adminModal = document.getElementById('adminModal');
@@ -17,6 +24,9 @@ const closeBtn = document.querySelector('.close');
 const registrationForm = document.getElementById('registrationForm');
 const tabBtns = document.querySelectorAll('.tab-btn');
 const tabPanes = document.querySelectorAll('.tab-pane');
+const adminLoginForm = document.getElementById('adminLoginForm');
+const adminContent = document.getElementById('adminContent');
+const logoutBtn = document.getElementById('logoutBtn');
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
@@ -65,6 +75,10 @@ function setupEventListeners() {
     adminBtn?.addEventListener('click', openAdminModal);
     closeBtn?.addEventListener('click', closeAdminModal);
     
+    // Admin login
+    adminLoginForm?.addEventListener('submit', handleAdminLogin);
+    logoutBtn?.addEventListener('click', handleAdminLogout);
+    
     window.addEventListener('click', (event) => {
         if (event.target === adminModal) {
             closeAdminModal();
@@ -97,14 +111,58 @@ function setupEventListeners() {
 // Modal Functions
 function openAdminModal() {
     adminModal.style.display = 'block';
-    loadPendingRegistrations();
+    if (isAdminLoggedIn) {
+        showAdminContent();
+        loadPendingRegistrations();
+    } else {
+        showAdminLogin();
+    }
 }
 
 function closeAdminModal() {
     adminModal.style.display = 'none';
 }
 
+function showAdminLogin() {
+    adminLoginForm.style.display = 'block';
+    adminContent.style.display = 'none';
+}
+
+function showAdminContent() {
+    adminLoginForm.style.display = 'none';
+    adminContent.style.display = 'block';
+}
+
+// Admin Authentication
+function handleAdminLogin(e) {
+    e.preventDefault();
+    const username = document.getElementById('adminUsername').value;
+    const password = document.getElementById('adminPassword').value;
+    
+    if (username === ADMIN_CREDENTIALS.username && password === ADMIN_CREDENTIALS.password) {
+        isAdminLoggedIn = true;
+        showAdminContent();
+        loadPendingRegistrations();
+        loadTournamentData();
+        showMessage('تم تسجيل الدخول بنجاح', 'success');
+        document.getElementById('adminLoginForm').reset();
+    } else {
+        showMessage('اسم المستخدم أو كلمة المرور غير صحيحة', 'error');
+    }
+}
+
+function handleAdminLogout() {
+    isAdminLoggedIn = false;
+    showAdminLogin();
+    showMessage('تم تسجيل الخروج بنجاح', 'success');
+}
+
 function switchTab(tabName) {
+    if (!isAdminLoggedIn) {
+        showMessage('يجب تسجيل الدخول أولاً', 'error');
+        return;
+    }
+    
     // Update tab buttons
     tabBtns.forEach(btn => btn.classList.remove('active'));
     document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
@@ -154,6 +212,11 @@ async function handleRegistration(e) {
 
 // Admin Functions
 async function loadPendingRegistrations() {
+    if (!isAdminLoggedIn) {
+        showMessage('غير مصرح لك بالوصول', 'error');
+        return;
+    }
+    
     try {
         const { data, error } = await supabase
             .from('registrations')
@@ -201,6 +264,11 @@ function displayPendingRegistrations(registrations) {
 }
 
 async function approveRegistration(id) {
+    if (!isAdminLoggedIn) {
+        showMessage('غير مصرح لك بهذا الإجراء', 'error');
+        return;
+    }
+    
     try {
         const { error } = await supabase
             .from('registrations')
@@ -219,6 +287,11 @@ async function approveRegistration(id) {
 }
 
 async function rejectRegistration(id) {
+    if (!isAdminLoggedIn) {
+        showMessage('غير مصرح لك بهذا الإجراء', 'error');
+        return;
+    }
+    
     try {
         const { error } = await supabase
             .from('registrations')
@@ -400,6 +473,11 @@ function getTournamentIndex(type) {
 
 // Results Management
 async function addResult() {
+    if (!isAdminLoggedIn) {
+        showMessage('غير مصرح لك بهذا الإجراء', 'error');
+        return;
+    }
+    
     const tournament = document.getElementById('matchTournament').value;
     const team1 = document.getElementById('team1').value;
     const team2 = document.getElementById('team2').value;
@@ -529,8 +607,140 @@ function clearResultsForm() {
     document.getElementById('score2').value = '';
 }
 
+// Delete Result Function
+async function deleteResult(resultId, resultType) {
+    if (!isAdminLoggedIn) {
+        showMessage('غير مصرح لك بهذا الإجراء', 'error');
+        return;
+    }
+    
+    if (!confirm('هل أنت متأكد من حذف هذه النتيجة؟')) {
+        return;
+    }
+    
+    try {
+        const tableName = resultType === 'league' ? 'league_matches' : 'knockout_matches';
+        const { error } = await supabase
+            .from(tableName)
+            .delete()
+            .eq('id', resultId);
+
+        if (error) throw error;
+
+        showMessage('تم حذف النتيجة بنجاح', 'success');
+        loadTournamentData();
+        
+        // إعادة حساب ترتيب الدوري إذا كانت مباراة دوري
+        if (resultType === 'league') {
+            await recalculateLeagueStandings();
+        }
+    } catch (error) {
+        console.error('Error deleting result:', error);
+        showMessage('خطأ في حذف النتيجة', 'error');
+    }
+}
+
+// Recalculate League Standings
+async function recalculateLeagueStandings() {
+    try {
+        // مسح الترتيب الحالي
+        await supabase.from('league_standings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        // إعادة حساب من جميع المباريات
+        const { data: matches, error } = await supabase
+            .from('league_matches')
+            .select('*');
+
+        if (error) throw error;
+
+        const standings = {};
+        
+        matches.forEach(match => {
+            if (match.team1_score !== null && match.team2_score !== null) {
+                // تهيئة الفرق إذا لم تكن موجودة
+                if (!standings[match.team1_name]) {
+                    standings[match.team1_name] = {
+                        team_name: match.team1_name,
+                        matches_played: 0,
+                        wins: 0,
+                        draws: 0,
+                        losses: 0,
+                        goals_for: 0,
+                        goals_against: 0,
+                        goal_difference: 0,
+                        points: 0
+                    };
+                }
+                if (!standings[match.team2_name]) {
+                    standings[match.team2_name] = {
+                        team_name: match.team2_name,
+                        matches_played: 0,
+                        wins: 0,
+                        draws: 0,
+                        losses: 0,
+                        goals_for: 0,
+                        goals_against: 0,
+                        goal_difference: 0,
+                        points: 0
+                    };
+                }
+                
+                // تحديث إحصائيات الفريق الأول
+                standings[match.team1_name].matches_played++;
+                standings[match.team1_name].goals_for += match.team1_score;
+                standings[match.team1_name].goals_against += match.team2_score;
+                
+                // تحديث إحصائيات الفريق الثاني
+                standings[match.team2_name].matches_played++;
+                standings[match.team2_name].goals_for += match.team2_score;
+                standings[match.team2_name].goals_against += match.team1_score;
+                
+                // تحديد النتيجة والنقاط
+                if (match.team1_score > match.team2_score) {
+                    standings[match.team1_name].wins++;
+                    standings[match.team1_name].points += 3;
+                    standings[match.team2_name].losses++;
+                } else if (match.team2_score > match.team1_score) {
+                    standings[match.team2_name].wins++;
+                    standings[match.team2_name].points += 3;
+                    standings[match.team1_name].losses++;
+                } else {
+                    standings[match.team1_name].draws++;
+                    standings[match.team1_name].points++;
+                    standings[match.team2_name].draws++;
+                    standings[match.team2_name].points++;
+                }
+                
+                // حساب فارق الأهداف
+                standings[match.team1_name].goal_difference = 
+                    standings[match.team1_name].goals_for - standings[match.team1_name].goals_against;
+                standings[match.team2_name].goal_difference = 
+                    standings[match.team2_name].goals_for - standings[match.team2_name].goals_against;
+            }
+        });
+        
+        // إدراج الترتيب الجديد
+        const standingsArray = Object.values(standings);
+        if (standingsArray.length > 0) {
+            const { error: insertError } = await supabase
+                .from('league_standings')
+                .insert(standingsArray);
+                
+            if (insertError) throw insertError;
+        }
+        
+    } catch (error) {
+        console.error('Error recalculating standings:', error);
+    }
+}
+
 // Tournament Creation Functions
 async function createTournament() {
+    if (!isAdminLoggedIn) {
+        showMessage('غير مصرح لك بهذا الإجراء', 'error');
+        return;
+    }
+    
     const tournamentType = prompt('نوع البطولة (league/online/offline):');
     const tournamentName = prompt('اسم البطولة:');
     
