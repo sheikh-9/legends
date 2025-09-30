@@ -1,6 +1,6 @@
 // Supabase Configuration
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = 'https://fgoylqtdqhzduuezctrf.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
 
 // Initialize Supabase client
 let supabase;
@@ -9,7 +9,8 @@ let supabase;
 document.addEventListener('DOMContentLoaded', function() {
     // Check if Supabase is configured
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
-        SUPABASE_URL === 'undefined' || SUPABASE_ANON_KEY === 'undefined') {
+        SUPABASE_URL === 'https://your-project-id.supabase.co' || 
+        SUPABASE_ANON_KEY === 'your-anon-key-here') {
         console.warn('Supabase not configured. Please set up your environment variables.');
         showMessage('يرجى إعداد قاعدة البيانات أولاً', 'error');
         return;
@@ -279,10 +280,10 @@ function displayPendingRegistrations(registrations) {
                 <div><strong>التاريخ:</strong> ${new Date(reg.created_at).toLocaleDateString('ar-SA')}</div>
             </div>
             <div class="request-actions">
-                <button class="approve-btn" onclick="approveRegistration(${reg.id})">
+                <button class="approve-btn" onclick="approveRegistration('${reg.id}')">
                     <i class="fas fa-check"></i> موافقة
                 </button>
-                <button class="reject-btn" onclick="rejectRegistration(${reg.id})">
+                <button class="reject-btn" onclick="rejectRegistration('${reg.id}')">
                     <i class="fas fa-times"></i> رفض
                 </button>
             </div>
@@ -780,6 +781,7 @@ async function deleteResult(resultId, resultType) {
 
         showMessage('تم حذف النتيجة بنجاح', 'success');
         loadTournamentData();
+        loadMatchesForAdmin();
         
         // إعادة حساب ترتيب الدوري إذا كانت مباراة دوري
         if (resultType === 'league') {
@@ -795,7 +797,14 @@ async function deleteResult(resultId, resultType) {
 async function recalculateLeagueStandings() {
     try {
         // مسح الترتيب الحالي
-        await supabase.from('league_standings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        const { error: deleteError } = await supabase
+            .from('league_standings')
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000');
+        
+        if (deleteError) {
+            console.log('Delete error (expected):', deleteError);
+        }
         
         // إعادة حساب من جميع المباريات
         const { data: matches, error } = await supabase
@@ -949,11 +958,18 @@ function showMessage(text, type) {
     message.textContent = text;
 
     // Insert message at the top of the page
-    document.body.insertBefore(message, document.body.firstChild);
+    const header = document.querySelector('.header');
+    if (header && header.nextSibling) {
+        document.body.insertBefore(message, header.nextSibling);
+    } else {
+        document.body.insertBefore(message, document.body.firstChild);
+    }
 
     // Auto remove after 5 seconds
     setTimeout(() => {
-        message.remove();
+        if (message && message.parentNode) {
+            message.remove();
+        }
     }, 5000);
 }
 
