@@ -1,10 +1,32 @@
 // Supabase Configuration
-const SUPABASE_URL = 'https://fgoylqtdqhzduuezctrf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Initialize Supabase client
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let supabase;
 
+// Initialize Supabase when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if Supabase is configured
+    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
+        SUPABASE_URL === 'undefined' || SUPABASE_ANON_KEY === 'undefined') {
+        console.warn('Supabase not configured. Please set up your environment variables.');
+        showMessage('يرجى إعداد قاعدة البيانات أولاً', 'error');
+        return;
+    }
+    
+    try {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('Supabase connected successfully');
+    } catch (error) {
+        console.error('Failed to initialize Supabase:', error);
+        showMessage('خطأ في الاتصال بقاعدة البيانات', 'error');
+    }
+    
+    initializeSlider();
+    setupEventListeners();
+    loadTournamentData();
+});
 // Global Variables
 let currentSlide = 0;
 const slides = document.querySelectorAll('.slide');
@@ -28,13 +50,6 @@ const adminLoginForm = document.getElementById('adminLoginForm');
 const adminContent = document.getElementById('adminContent');
 const logoutBtn = document.getElementById('logoutBtn');
 
-// Initialize the application
-document.addEventListener('DOMContentLoaded', function() {
-    initializeSlider();
-    setupEventListeners();
-    loadTournamentData();
-    loadPendingRegistrations();
-});
 
 // Slider Functions
 function initializeSlider() {
@@ -132,6 +147,7 @@ function showAdminContent() {
     adminLoginForm.style.display = 'none';
     adminContent.style.display = 'block';
     document.getElementById('logoutBtn').style.display = 'block';
+    loadPendingRegistrations();
 }
 
 // Admin Authentication
@@ -186,6 +202,11 @@ function switchTab(tabName) {
 async function handleRegistration(e) {
     e.preventDefault();
     
+    if (!supabase) {
+        showMessage('قاعدة البيانات غير متصلة', 'error');
+        return;
+    }
+    
     const formData = new FormData(registrationForm);
     const registrationData = {
         player_name: formData.get('playerName'),
@@ -214,8 +235,12 @@ async function handleRegistration(e) {
 
 // Admin Functions
 async function loadPendingRegistrations() {
+    if (!supabase) {
+        showMessage('قاعدة البيانات غير متصلة', 'error');
+        return;
+    }
+    
     if (!isAdminLoggedIn) {
-        showMessage('غير مصرح لك بالوصول', 'error');
         return;
     }
     
@@ -266,6 +291,11 @@ function displayPendingRegistrations(registrations) {
 }
 
 async function approveRegistration(id) {
+    if (!supabase) {
+        showMessage('قاعدة البيانات غير متصلة', 'error');
+        return;
+    }
+    
     if (!isAdminLoggedIn) {
         showMessage('غير مصرح لك بهذا الإجراء', 'error');
         return;
@@ -289,6 +319,11 @@ async function approveRegistration(id) {
 }
 
 async function rejectRegistration(id) {
+    if (!supabase) {
+        showMessage('قاعدة البيانات غير متصلة', 'error');
+        return;
+    }
+    
     if (!isAdminLoggedIn) {
         showMessage('غير مصرح لك بهذا الإجراء', 'error');
         return;
@@ -312,6 +347,11 @@ async function rejectRegistration(id) {
 
 // Tournament Management Functions
 async function loadTournamentData() {
+    if (!supabase) {
+        console.warn('Supabase not initialized');
+        return;
+    }
+    
     try {
         // Load league standings
         await loadLeagueStandings();
