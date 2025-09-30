@@ -225,6 +225,7 @@ body {
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
 }
 
 .tournament-card:hover {
@@ -247,6 +248,13 @@ body {
 .tournament-header h3 {
     font-size: 1.5rem;
     font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.tournament-subtitle {
+    font-size: 1rem;
+    opacity: 0.9;
+    font-weight: 400;
 }
 
 .tournament-info {
@@ -254,12 +262,51 @@ body {
     text-align: center;
 }
 
-.tournament-info p {
-    font-size: 1.1rem;
-    color: #666;
+.tournament-stats {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
     margin-bottom: 1rem;
 }
 
+.stat-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 10px;
+    font-weight: 500;
+    color: #333;
+}
+
+.stat-item i {
+    color: #667eea;
+    font-size: 1.1rem;
+}
+
+.view-details-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1rem;
+    border-radius: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.view-details-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+}
 .status-badge {
     display: inline-block;
     padding: 0.5rem 1rem;
@@ -283,19 +330,117 @@ body {
     color: #721c24;
 }
 
-.tournament-table, .tournament-bracket {
-    padding: 1.5rem;
-    border-top: 1px solid #eee;
+/* Tournament Details Modal */
+.tournament-modal {
+    max-width: 1000px;
+    max-height: 90vh;
 }
 
-.tournament-table h4, .tournament-bracket h4 {
-    margin-bottom: 1rem;
-    color: #333;
+.tournament-modal-body {
+    padding: 0;
+}
+
+.tournament-details-tabs {
+    display: flex;
+    background: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.details-tab-btn {
+    flex: 1;
+    padding: 1rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
     font-weight: 600;
+    transition: all 0.3s ease;
+    color: #666;
+}
+
+.details-tab-btn.active {
+    background: white;
+    color: #667eea;
+    border-bottom: 3px solid #667eea;
+}
+
+.details-tab-btn:hover:not(.active) {
+    background: rgba(102, 126, 234, 0.1);
+}
+
+.tournament-details-content {
+    padding: 2rem;
+}
+
+.details-tab-pane {
+    display: none;
+}
+
+.details-tab-pane.active {
+    display: block;
+}
+
+/* Overview Tab */
+.overview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+}
+
+.overview-card {
+    background: #f8f9fa;
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    border: 1px solid #e9ecef;
+}
+
+.overview-card i {
+    font-size: 3rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.overview-card h4 {
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.overview-card ul {
+    list-style: none;
+    text-align: right;
+}
+
+.overview-card ul li {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid #e9ecef;
+    color: #666;
+}
+
+.overview-card ul li:last-child {
+    border-bottom: none;
+}
+
+/* Detailed Tables */
+.detailed-table {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.detailed-table h4 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    margin: 0;
+    font-size: 1.2rem;
 }
 
 .table-container {
     overflow-x: auto;
+    padding: 1rem;
 }
 
 table {
@@ -313,12 +458,97 @@ table th {
     background: #f8f9fa;
     font-weight: 600;
     color: #333;
+    font-size: 0.9rem;
 }
 
 table tr:hover {
     background: #f8f9fa;
 }
 
+/* Match Cards */
+.match-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.match-item {
+    background: white;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.match-teams {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.match-score {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #667eea;
+}
+
+.match-date {
+    color: #666;
+    font-size: 0.9rem;
+}
+
+/* Schedule */
+.schedule-day {
+    background: white;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.schedule-day h5 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem 1.5rem;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.schedule-matches {
+    padding: 1rem;
+}
+
+.schedule-match {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.schedule-match:last-child {
+    border-bottom: none;
+}
+
+.schedule-time {
+    font-weight: 600;
+    color: #667eea;
+    min-width: 80px;
+}
+
+.schedule-teams {
+    flex: 1;
+    text-align: center;
+    font-weight: 500;
+}
+
+.schedule-venue {
+    color: #666;
+    font-size: 0.9rem;
+    min-width: 100px;
+    text-align: left;
+}
 /* Videos Section */
 .videos {
     padding: 5rem 0;
