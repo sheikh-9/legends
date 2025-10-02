@@ -1,6 +1,6 @@
 // Supabase Configuration
-const SUPABASE_URL = 'https://fgoylqtdqhzduuezctrf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+const SUPABASE_URL = 'https://your-project-id.supabase.co';
+const SUPABASE_ANON_KEY = 'your-anon-key-here';
 
 // Initialize Supabase client
 let supabase;
@@ -130,31 +130,50 @@ function setupEventListeners() {
 }
 
 // Tournament Details Functions
-function openTournamentDetails(tournamentType) {
+function showTournamentDetails(tournamentType) {
     currentTournament = tournamentType;
-    tournamentModal.style.display = 'block';
     
-    // Set modal title
+    // Hide selection grid and show details section
+    document.querySelector('.tournament-selection-grid').style.display = 'none';
+    document.querySelector('.tournament-selection-header').style.display = 'none';
+    document.getElementById('tournamentDetailsSection').style.display = 'block';
+    
+    // Set section title
     const titles = {
         'league': 'بطولة الدوري الممتاز',
         'online': 'كأس فيفا الرقمي',
         'offline': 'بطولة الأبطال الحضورية'
     };
-    document.getElementById('tournamentModalTitle').textContent = titles[tournamentType];
+    document.getElementById('selectedTournamentTitle').textContent = titles[tournamentType];
     
     // Load tournament data
-    loadTournamentDetails(tournamentType);
+    loadInlineTournamentDetails(tournamentType);
     
     // Setup tabs
-    setupTournamentTabs();
+    setupInlineTournamentTabs();
+    
+    // Scroll to details section
+    document.getElementById('tournamentDetailsSection').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
 }
 
-function closeTournamentModal() {
-    tournamentModal.style.display = 'none';
+function hideTournamentDetails() {
+    // Show selection grid and hide details section
+    document.querySelector('.tournament-selection-grid').style.display = 'grid';
+    document.querySelector('.tournament-selection-header').style.display = 'block';
+    document.getElementById('tournamentDetailsSection').style.display = 'none';
     currentTournament = null;
+    
+    // Scroll back to tournaments section
+    document.getElementById('tournaments').scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+    });
 }
 
-function setupTournamentTabs() {
+function setupInlineTournamentTabs() {
     const tabBtns = document.querySelectorAll('.details-tab-btn');
     const tabPanes = document.querySelectorAll('.details-tab-pane');
     
@@ -172,25 +191,24 @@ function setupTournamentTabs() {
     });
 }
 
-async function loadTournamentDetails(tournamentType) {
+async function loadInlineTournamentDetails(tournamentType) {
     // Load overview
-    loadTournamentOverview(tournamentType);
+    loadInlineTournamentOverview(tournamentType);
     
     // Load standings/bracket
     if (tournamentType === 'league') {
-        await loadDetailedLeagueStandings();
+        await loadInlineLeagueStandings();
     } else {
-        await loadDetailedBracket(tournamentType);
+        await loadInlineBracket(tournamentType);
     }
     
     // Load matches
-    await loadTournamentMatches(tournamentType);
+    await loadInlineTournamentMatches(tournamentType);
     
     // Load schedule
-    loadTournamentSchedule(tournamentType);
+    loadInlineTournamentSchedule(tournamentType);
 }
-
-function loadTournamentOverview(tournamentType) {
+function loadInlineTournamentOverview(tournamentType) {
     const tournamentData = {
         'league': {
             info: [
@@ -257,19 +275,19 @@ function loadTournamentOverview(tournamentType) {
     const data = tournamentData[tournamentType];
     
     // Update info
-    document.getElementById('tournamentInfo').innerHTML = 
+    document.getElementById('tournamentInfoInline').innerHTML = 
         '<ul>' + data.info.map(item => `<li>${item}</li>`).join('') + '</ul>';
     
     // Update prizes
-    document.getElementById('tournamentPrizes').innerHTML = 
+    document.getElementById('tournamentPrizesInline').innerHTML = 
         '<ul>' + data.prizes.map(item => `<li>${item}</li>`).join('') + '</ul>';
     
     // Update rules
-    document.getElementById('tournamentRules').innerHTML = 
+    document.getElementById('tournamentRulesInline').innerHTML = 
         '<ul>' + data.rules.map(item => `<li>${item}</li>`).join('') + '</ul>';
 }
 
-async function loadDetailedLeagueStandings() {
+async function loadInlineLeagueStandings() {
     if (!supabase) return;
     
     try {
@@ -332,7 +350,7 @@ async function loadDetailedLeagueStandings() {
     }
 }
 
-async function loadDetailedBracket(tournamentType) {
+async function loadInlineBracket(tournamentType) {
     if (!supabase) return;
     
     try {
@@ -390,7 +408,7 @@ async function loadDetailedBracket(tournamentType) {
     }
 }
 
-async function loadTournamentMatches(tournamentType) {
+async function loadInlineTournamentMatches(tournamentType) {
     if (!supabase) return;
     
     try {
@@ -441,7 +459,7 @@ async function loadTournamentMatches(tournamentType) {
     }
 }
 
-function loadTournamentSchedule(tournamentType) {
+function loadInlineTournamentSchedule(tournamentType) {
     const schedules = {
         'league': [
             {
@@ -530,6 +548,10 @@ function openAdminModal() {
 
 function closeAdminModal() {
     adminModal.style.display = 'none';
+}
+
+function closeTournamentModal() {
+    tournamentModal.style.display = 'none';
 }
 
 function showAdminLogin() {
@@ -1237,7 +1259,6 @@ function getExperienceName(level) {
         default: return level;
     }
 }
-    message.className = `message ${type}`;
 
 function showMessage(text, type) {
     // Remove existing messages
@@ -1246,6 +1267,7 @@ function showMessage(text, type) {
 
     // Create new message
     const message = document.createElement('div');
+    message.className = `message ${type}`;
     message.textContent = text;
 
     // Insert message at the top of the page
