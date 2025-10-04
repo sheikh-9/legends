@@ -1,6 +1,6 @@
 // Supabase Configuration
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://fgoylqtdqhzduuezctrf.supabase.co';
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
 
 // Initialize Supabase client
 let supabase;
@@ -8,17 +8,15 @@ let supabase;
 // Initialize Supabase when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Check if Supabase is configured
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
-        SUPABASE_URL === 'your_supabase_project_url' || 
-        SUPABASE_ANON_KEY === 'your_supabase_anon_key') {
-        console.warn('Supabase not configured. Please set up your environment variables.');
-        showMessage('يرجى إعداد قاعدة البيانات من خلال الضغط على زر Supabase في الإعدادات', 'error');
-        return;
-    }
+    console.log('Supabase URL:', SUPABASE_URL);
+    console.log('Supabase Key exists:', !!SUPABASE_ANON_KEY);
     
     try {
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log('Supabase connected successfully');
+        
+        // Test connection
+        testDatabaseConnection();
     } catch (error) {
         console.error('Failed to initialize Supabase:', error);
         showMessage('خطأ في الاتصال بقاعدة البيانات', 'error');
@@ -623,6 +621,12 @@ async function handleRegistration(e) {
         return;
     }
     
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+    submitBtn.disabled = true;
+    
     const formData = new FormData(registrationForm);
     const registrationData = {
         player_name: formData.get('playerName'),
@@ -646,6 +650,10 @@ async function handleRegistration(e) {
     } catch (error) {
         console.error('Error submitting registration:', error);
         showMessage('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.', 'error');
+    } finally {
+        // Reset button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     }
 }
 
@@ -718,19 +726,27 @@ async function approveRegistration(id) {
     }
     
     try {
+        console.log('Approving registration with ID:', id);
+        
         const { error } = await supabase
             .from('registrations')
-            .update({ status: 'approved' })
-            .eq('id', id);
+            .update({ 
+                status: 'approved',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', String(id));
 
-        if (error) throw error;
+        if (error) {
+            console.error('Approval error:', error);
+            throw error;
+        }
 
         showMessage('تم قبول طلب التسجيل بنجاح', 'success');
         loadPendingRegistrations();
         loadTournamentData();
     } catch (error) {
         console.error('Error approving registration:', error);
-        showMessage('خطأ في قبول الطلب', 'error');
+        showMessage('خطأ في قبول الطلب: ' + error.message, 'error');
     }
 }
 
@@ -746,18 +762,26 @@ async function rejectRegistration(id) {
     }
     
     try {
+        console.log('Rejecting registration with ID:', id);
+        
         const { error } = await supabase
             .from('registrations')
-            .update({ status: 'rejected' })
-            .eq('id', id);
+            .update({ 
+                status: 'rejected',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', String(id));
 
-        if (error) throw error;
+        if (error) {
+            console.error('Rejection error:', error);
+            throw error;
+        }
 
         showMessage('تم رفض طلب التسجيل', 'success');
         loadPendingRegistrations();
     } catch (error) {
         console.error('Error rejecting registration:', error);
-        showMessage('خطأ في رفض الطلب', 'error');
+        showMessage('خطأ في رفض الطلب: ' + error.message, 'error');
     }
 }
 
@@ -1295,6 +1319,25 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// Test database connection
+async function testDatabaseConnection() {
+    try {
+        const { data, error } = await supabase
+            .from('registrations')
+            .select('count', { count: 'exact', head: true });
+        
+        if (error) {
+            console.error('Database connection test failed:', error);
+            showMessage('فشل في الاتصال بقاعدة البيانات: ' + error.message, 'error');
+        } else {
+            console.log('Database connection successful');
+            showMessage('تم الاتصال بقاعدة البيانات بنجاح', 'success');
+        }
+    } catch (error) {
+        console.error('Database test error:', error);
+        showMessage('خطأ في اختبار قاعدة البيانات', 'error');
+    }
+}
 // Smooth scroll for navigation
 function smoothScroll(target) {
     document.querySelector(target).scrollIntoView({
