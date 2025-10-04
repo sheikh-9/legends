@@ -1,6 +1,6 @@
 // Supabase Configuration
-const SUPABASE_URL = 'https://your-project-id.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key-here';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Initialize Supabase client
 let supabase;
@@ -21,10 +21,10 @@ let currentParticipantTab = 'league';
 document.addEventListener('DOMContentLoaded', function() {
     // Check if Supabase is configured
     if (!SUPABASE_URL || !SUPABASE_ANON_KEY || 
-        SUPABASE_URL === 'https://your-project-id.supabase.co' || 
-        SUPABASE_ANON_KEY === 'your-anon-key-here') {
+        SUPABASE_URL === 'your_supabase_project_url' || 
+        SUPABASE_ANON_KEY === 'your_supabase_anon_key') {
         console.warn('Supabase not configured. Please set up your environment variables.');
-        showMessage('يرجى إعداد قاعدة البيانات أولاً', 'error');
+        showMessage('يرجى إعداد قاعدة البيانات من خلال الضغط على زر Supabase في الإعدادات', 'error');
         return;
     }
     
