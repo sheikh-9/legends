@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة إدارة بطولات فيفا 26</title>
+    <link rel="stylesheet" href="admin-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Login Screen -->
+    <div id="loginScreen" class="login-screen">
+        <div class="login-container">
+            <div class="login-header">
+                <i class="fas fa-shield-alt"></i>
+                <h1>لوحة إدارة البطولات</h1>
+                <p>تسجيل دخول المدير</p>
+            </div>
+            <form id="adminLoginForm" class="login-form">
+                <div class="form-group">
+                    <i class="fas fa-user"></i>
+                    <input type="text" id="adminUsername" placeholder="اسم المستخدم" required>
+                </div>
+                <div class="form-group">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="adminPassword" placeholder="كلمة المرور" required>
+                </div>
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt"></i>
+                    دخول
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Admin Dashboard -->
+    <div id="adminDashboard" class="admin-dashboard" style="display: none;">
+        <!-- Header -->
+        <header class="admin-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <i class="fas fa-trophy"></i>
+                    <h1>لوحة إدارة بطولات فيفا 26</h1>
+                </div>
+                <div class="header-right">
+                    <div class="admin-info">
+                        <i class="fas fa-user-shield"></i>
+                        <span>مرحباً، المدير</span>
+                    </div>
+                    <button id="logoutBtn" class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i>
+                        تسجيل الخروج
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="nav-item active" data-section="overview">
+                        <i class="fas fa-chart-line"></i>
+                        <span>نظرة عامة</span>
+                    </li>
+                    <li class="nav-item" data-section="registrations">
+                        <i class="fas fa-user-plus"></i>
+                        <span>طلبات التسجيل</span>
+                        <span class="badge" id="pendingBadge">0</span>
+                    </li>
+                    <li class="nav-item" data-section="tournaments">
+                        <i class="fas fa-trophy"></i>
+                        <span>إدارة البطولات</span>
+                    </li>
+                    <li class="nav-item" data-section="matches">
+                        <i class="fas fa-futbol"></i>
+                        <span>المباريات والنتائج</span>
+                    </li>
+                    <li class="nav-item" data-section="standings">
+                        <i class="fas fa-list-ol"></i>
+                        <span>الترتيب والإحصائيات</span>
+                    </li>
+                    <li class="nav-item" data-section="participants">
+                        <i class="fas fa-users"></i>
+                        <span>المشاركين</span>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Overview Section -->
+            <section id="overview" class="content-section active">
+                <div class="section-header">
+                    <h2><i class="fas fa-chart-line"></i> نظرة عامة</h2>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalRegistrations">0</h3>
+                            <p>إجمالي التسجيلات</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="pendingRegistrations">0</h3>
+                            <p>طلبات معلقة</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="activeTournaments">3</h3>
+                            <p>البطولات النشطة</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-futbol"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="totalMatches">0</h3>
+                            <p>إجمالي المباريات</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>توزيع التسجيلات حسب البطولة</h3>
+                        <div id="registrationChart" class="chart-content">
+                            <!-- Chart will be populated by JavaScript -->
+                        </div>
+                    </div>
+                    <div class="chart-card">
+                        <h3>آخر الأنشطة</h3>
+                        <div id="recentActivity" class="activity-list">
+                            <!-- Activities will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Registrations Section -->
+            <section id="registrations" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-user-plus"></i> طلبات التسجيل</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-primary" onclick="refreshRegistrations()">
+                            <i class="fas fa-sync-alt"></i> تحديث
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="filter-tabs">
+                    <button class="filter-tab active" data-status="pending">المعلقة</button>
+                    <button class="filter-tab" data-status="approved">المقبولة</button>
+                    <button class="filter-tab" data-status="rejected">المرفوضة</button>
+                    <button class="filter-tab" data-status="all">الكل</button>
+                </div>
+
+                <div id="registrationsList" class="registrations-list">
+                    <!-- Registrations will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Tournaments Section -->
+            <section id="tournaments" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-trophy"></i> إدارة البطولات</h2>
+                </div>
+                
+                <div class="tournaments-grid">
+                    <div class="tournament-admin-card" data-type="league">
+                        <div class="tournament-admin-header">
+                            <i class="fas fa-list-ol"></i>
+                            <h3>بطولة الدوري الممتاز</h3>
+                        </div>
+                        <div class="tournament-admin-stats">
+                            <div class="stat">
+                                <span class="label">المشاركين:</span>
+                                <span class="value" id="leagueParticipants">0/16</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">المباريات:</span>
+                                <span class="value" id="leagueMatches">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">الحالة:</span>
+                                <span class="status-badge open" id="leagueStatus">مفتوح</span>
+                            </div>
+                        </div>
+                        <div class="tournament-admin-actions">
+                            <button class="btn btn-primary" onclick="manageTournament('league')">
+                                <i class="fas fa-cog"></i> إدارة
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tournament-admin-card" data-type="online">
+                        <div class="tournament-admin-header">
+                            <i class="fas fa-wifi"></i>
+                            <h3>كأس فيفا الرقمي</h3>
+                        </div>
+                        <div class="tournament-admin-stats">
+                            <div class="stat">
+                                <span class="label">المشاركين:</span>
+                                <span class="value" id="onlineParticipants">0/32</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">المباريات:</span>
+                                <span class="value" id="onlineMatches">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">الحالة:</span>
+                                <span class="status-badge open" id="onlineStatus">مفتوح</span>
+                            </div>
+                        </div>
+                        <div class="tournament-admin-actions">
+                            <button class="btn btn-primary" onclick="manageTournament('online')">
+                                <i class="fas fa-cog"></i> إدارة
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="tournament-admin-card" data-type="offline">
+                        <div class="tournament-admin-header">
+                            <i class="fas fa-users"></i>
+                            <h3>بطولة الأبطال الحضورية</h3>
+                        </div>
+                        <div class="tournament-admin-stats">
+                            <div class="stat">
+                                <span class="label">المشاركين:</span>
+                                <span class="value" id="offlineParticipants">0/16</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">المباريات:</span>
+                                <span class="value" id="offlineMatches">0</span>
+                            </div>
+                            <div class="stat">
+                                <span class="label">الحالة:</span>
+                                <span class="status-badge open" id="offlineStatus">مفتوح</span>
+                            </div>
+                        </div>
+                        <div class="tournament-admin-actions">
+                            <button class="btn btn-primary" onclick="manageTournament('offline')">
+                                <i class="fas fa-cog"></i> إدارة
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Matches Section -->
+            <section id="matches" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-futbol"></i> المباريات والنتائج</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-success" onclick="showAddMatchModal()">
+                            <i class="fas fa-plus"></i> إضافة مباراة
+                        </button>
+                    </div>
+                </div>
+
+                <div class="matches-tabs">
+                    <button class="match-tab active" data-tournament="league">الدوري</button>
+                    <button class="match-tab" data-tournament="online">الرقمي</button>
+                    <button class="match-tab" data-tournament="offline">الحضوري</button>
+                </div>
+
+                <div id="matchesList" class="matches-list">
+                    <!-- Matches will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Standings Section -->
+            <section id="standings" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-list-ol"></i> الترتيب والإحصائيات</h2>
+                    <div class="section-actions">
+                        <button class="btn btn-warning" onclick="recalculateStandings()">
+                            <i class="fas fa-calculator"></i> إعادة حساب
+                        </button>
+                    </div>
+                </div>
+
+                <div id="standingsContent" class="standings-content">
+                    <!-- Standings will be populated by JavaScript -->
+                </div>
+            </section>
+
+            <!-- Participants Section -->
+            <section id="participants" class="content-section">
+                <div class="section-header">
+                    <h2><i class="fas fa-users"></i> المشاركين</h2>
+                </div>
+
+                <div class="participants-tabs">
+                    <button class="participant-tab active" data-tournament="league">الدوري</button>
+                    <button class="participant-tab" data-tournament="online">الرقمي</button>
+                    <button class="participant-tab" data-tournament="offline">الحضوري</button>
+                </div>
+
+                <div id="participantsList" class="participants-list">
+                    <!-- Participants will be populated by JavaScript -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Add Match Modal -->
+    <div id="addMatchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>إضافة مباراة جديدة</h3>
+                <span class="close" onclick="closeAddMatchModal()">&times;</span>
+            </div>
+            <form id="addMatchForm" class="modal-form">
+                <div class="form-group">
+                    <label>نوع البطولة</label>
+                    <select id="matchTournament" required>
+                        <option value="">اختر البطولة</option>
+                        <option value="league">بطولة الدوري الممتاز</option>
+                        <option value="online">كأس فيفا الرقمي</option>
+                        <option value="offline">بطولة الأبطال الحضورية</option>
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>الفريق الأول</label>
+                        <input type="text" id="team1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>الفريق الثاني</label>
+                        <input type="text" id="team2" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>نتيجة الفريق الأول</label>
+                        <input type="number" id="score1" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>نتيجة الفريق الثاني</label>
+                        <input type="number" id="score2" min="0" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>تاريخ المباراة</label>
+                    <input type="datetime-local" id="matchDate" required>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeAddMatchModal()">إلغاء</button>
+                    <button type="submit" class="btn btn-success">إضافة المباراة</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
+    <script src="admin-script.js"></script>
+</body>
+</html>
