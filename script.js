@@ -18,7 +18,6 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
     initializeSlider();
     setupEventListeners();
     loadTournamentData();
-});
 // Global Variables
 let currentSlide = 0;
 const slides = document.querySelectorAll('.slide');
@@ -82,6 +81,27 @@ async function testDatabaseConnection() {
     console.log('🧪 اختبار الاتصال بقاعدة البيانات...');
     
     try {
+        // Test connection with a simple query first
+        console.log('🔍 اختبار الاتصال الأساسي...');
+        const { data: connectionTest, error: connectionError } = await supabase
+            .from('tournaments')
+            .select('count')
+            .limit(1);
+        
+        if (connectionError) {
+            console.error('❌ فشل الاتصال الأساسي:', connectionError);
+            
+            // If tables don't exist, try to create them
+            if (connectionError.code === '42P01') {
+                console.log('🔧 الجداول غير موجودة، محاولة إنشائها...');
+                await createTablesIfNotExist();
+                return;
+            }
+            throw connectionError;
+        }
+        
+        console.log('✅ الاتصال الأساسي نجح');
+        
         // Test 1: Check if we can connect to registrations table
         const { data: regData, error: regError } = await supabase
             .from('registrations')
@@ -118,8 +138,44 @@ async function testDatabaseConnection() {
         
         console.log('✅ جدول ترتيب الدوري متاح');
         
+        // Test 4: Check league matches
+        const { data: matchesData, error: matchesError } = await supabase
+            .from('league_matches')
+            .select('count', { count: 'exact', head: true });
+        
+        if (matchesError) {
+            console.error('❌ خطأ في جدول مباريات الدوري:', matchesError);
+            throw matchesError;
+        }
+        
+        console.log('✅ جدول مباريات الدوري متاح');
+        
+        // Test 5: Check knockout matches
+        const { data: knockoutData, error: knockoutError } = await supabase
+            .from('knockout_matches')
+            .select('count', { count: 'exact', head: true });
+        
+        if (knockoutError) {
+            console.error('❌ خطأ في جدول مباريات الإقصاء:', knockoutError);
+            throw knockoutError;
+        }
+        
+        console.log('✅ جدول مباريات الإقصاء متاح');
+        
+        // Test 6: Check tournament participants
+        const { data: participantsData, error: participantsError } = await supabase
+            .from('tournament_participants')
+            .select('count', { count: 'exact', head: true });
+        
+        if (participantsError) {
+            console.error('❌ خطأ في جدول المشاركين:', participantsError);
+            throw participantsError;
+        }
+        
+        console.log('✅ جدول المشاركين متاح');
+        
         // All tests passed
-        console.log('🎉 جميع الاختبارات نجحت! قاعدة البيانات متصلة ومضبوطة');
+        console.log('🎉 جميع الاختبارات نجحت! قاعدة البيانات متصلة ومضبوطة (6 جداول)');
         showMessage('✅ تم الاتصال بقاعدة البيانات بنجاح', 'success');
         
         // Load initial data
@@ -142,6 +198,23 @@ async function testDatabaseConnection() {
     }
 }
 
+// Create tables if they don't exist
+async function createTablesIfNotExist() {
+    console.log('🔧 محاولة إنشاء الجداول المطلوبة...');
+    showMessage('⚠️ الجداول غير موجودة. يرجى تطبيق migration في Supabase أولاً', 'error');
+    
+    // Show instructions
+    console.log(`
+📋 تعليمات إنشاء قاعدة البيانات:
+1. اذهب إلى Supabase Dashboard
+2. اختر مشروعك
+3. اذهب إلى SQL Editor
+4. انسخ محتوى ملف: supabase/migrations/create_complete_tournament_system.sql
+5. شغل الكود
+6. حدث الصفحة
+    `);
+}
+
 // Load initial data after successful connection
 async function loadInitialData() {
     console.log('📊 تحميل البيانات الأولية...');
@@ -155,6 +228,10 @@ async function loadInitialData() {
         await loadSampleStandings();
         console.log('✅ تم تحميل بيانات الترتيب');
         
+        // Load sample matches
+        await loadSampleMatches();
+        console.log('✅ تم تحميل بيانات المباريات');
+        
     } catch (error) {
         console.error('⚠️ خطأ في تحميل البيانات الأولية:', error);
     }
@@ -163,6 +240,59 @@ async function loadInitialData() {
 // Load sample standings for display
 async function loadSampleStandings() {
     if (!supabase) return;
+    
+    try {
+        const { data, error } = await supabase
+            .from('league_standings')
+            .select('*')
+            .order('points', { ascending: false })
+            .limit(5);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+            console.log('📈 عدد الفرق في الترتيب:', data.length);
+        } else {
+            console.log('📝 لا توجد بيانات ترتيب حتى الآن');
+        }
+        
+    } catch (error) {
+        console.error('خطأ في تحميل الترتيب:', error);
+    }
+}
+
+// Load sample matches for display
+async function loadSampleMatches() {
+    if (!supabase) return;
+    
+    try {
+        const { data: leagueMatches, error: leagueError } = await supabase
+            .from('league_matches')
+            .select('*')
+            .limit(3);
+        
+        if (leagueError) throw leagueError;
+        
+        const { data: knockoutMatches, error: knockoutError } = await supabase
+            .from('knockout_matches')
+            .select('*')
+            .limit(3);
+        
+        if (knockoutError) throw knockoutError;
+        
+        if (leagueMatches && leagueMatches.length > 0) {
+            console.log('📈 عدد مباريات الدوري:', leagueMatches.length);
+        }
+        
+        if (knockoutMatches && knockoutMatches.length > 0) {
+            console.log('📈 عدد مباريات الإقصاء:', knockoutMatches.length);
+        }
+        
+    } catch (error) {
+        console.error('خطأ في تحميل المباريات:', error);
+    }
+}
+
 // Slider Functions
 function initializeSlider() {
     if (slides.length > 0) {
