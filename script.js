@@ -26,15 +26,143 @@ let slideInterval;
 let currentTournament = null;
 let supabase;
 
-// Supabase Configuration
-const SUPABASE_URL = 'https://fgoylqtdqhzduuezctrf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
-
 // DOM Elements
 const tournamentModal = document.getElementById('tournamentModal');
 const registrationForm = document.getElementById('registrationForm');
 
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 تحميل الموقع...');
+    
+    // Initialize Supabase
+    initializeSupabase();
+    
+    // Initialize other components
+    initializeSlider();
+    setupEventListeners();
+    loadTournamentData();
+});
 
+// Initialize Supabase
+function initializeSupabase() {
+    // Get Supabase credentials from environment or use defaults
+    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://fgoylqtdqhzduuezctrf.supabase.co';
+    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+    
+    console.log('🔗 محاولة الاتصال بـ Supabase...');
+    console.log('📍 URL:', SUPABASE_URL);
+    console.log('🔑 Key exists:', !!SUPABASE_ANON_KEY);
+    
+    try {
+        if (typeof window.supabase === 'undefined') {
+            console.error('❌ مكتبة Supabase غير محملة!');
+            showMessage('خطأ: مكتبة قاعدة البيانات غير محملة', 'error');
+            return;
+        }
+        
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ تم إنشاء عميل Supabase بنجاح');
+        
+        // Test connection immediately
+        testDatabaseConnection();
+        
+    } catch (error) {
+        console.error('❌ فشل في إنشاء عميل Supabase:', error);
+        showMessage('خطأ في الاتصال بقاعدة البيانات: ' + error.message, 'error');
+    }
+}
+
+// Test database connection
+async function testDatabaseConnection() {
+    if (!supabase) {
+        console.error('❌ عميل Supabase غير متاح');
+        return;
+    }
+    
+    console.log('🧪 اختبار الاتصال بقاعدة البيانات...');
+    
+    try {
+        // Test 1: Check if we can connect to registrations table
+        const { data: regData, error: regError } = await supabase
+            .from('registrations')
+            .select('count', { count: 'exact', head: true });
+        
+        if (regError) {
+            console.error('❌ خطأ في جدول التسجيلات:', regError);
+            throw regError;
+        }
+        
+        console.log('✅ جدول التسجيلات متاح');
+        
+        // Test 2: Check tournaments table
+        const { data: tourData, error: tourError } = await supabase
+            .from('tournaments')
+            .select('count', { count: 'exact', head: true });
+        
+        if (tourError) {
+            console.error('❌ خطأ في جدول البطولات:', tourError);
+            throw tourError;
+        }
+        
+        console.log('✅ جدول البطولات متاح');
+        
+        // Test 3: Check league standings
+        const { data: leagueData, error: leagueError } = await supabase
+            .from('league_standings')
+            .select('count', { count: 'exact', head: true });
+        
+        if (leagueError) {
+            console.error('❌ خطأ في جدول ترتيب الدوري:', leagueError);
+            throw leagueError;
+        }
+        
+        console.log('✅ جدول ترتيب الدوري متاح');
+        
+        // All tests passed
+        console.log('🎉 جميع الاختبارات نجحت! قاعدة البيانات متصلة ومضبوطة');
+        showMessage('✅ تم الاتصال بقاعدة البيانات بنجاح', 'success');
+        
+        // Load initial data
+        await loadInitialData();
+        
+    } catch (error) {
+        console.error('💥 فشل اختبار قاعدة البيانات:', error);
+        showMessage('❌ فشل في الاتصال بقاعدة البيانات: ' + error.message, 'error');
+        
+        // Show detailed error info
+        if (error.code) {
+            console.error('🔍 كود الخطأ:', error.code);
+        }
+        if (error.details) {
+            console.error('🔍 تفاصيل الخطأ:', error.details);
+        }
+        if (error.hint) {
+            console.error('🔍 اقتراح الحل:', error.hint);
+        }
+    }
+}
+
+// Load initial data after successful connection
+async function loadInitialData() {
+    console.log('📊 تحميل البيانات الأولية...');
+    
+    try {
+        // Load tournament statistics
+        await updateTournamentStatuses();
+        console.log('✅ تم تحميل إحصائيات البطولات');
+        
+        // Load some sample standings if available
+        await loadSampleStandings();
+        console.log('✅ تم تحميل بيانات الترتيب');
+        
+    } catch (error) {
+        console.error('⚠️ خطأ في تحميل البيانات الأولية:', error);
+    }
+}
+
+// Load sample standings for display
+async function loadSampleStandings() {
+    if (!supabase) return;
 // Slider Functions
 function initializeSlider() {
     if (slides.length > 0) {
@@ -510,7 +638,10 @@ function closeTournamentModal() {
 async function handleRegistration(e) {
     e.preventDefault();
     
+    console.log('📝 محاولة إرسال طلب تسجيل...');
+    
     if (!supabase) {
+        console.error('❌ قاعدة البيانات غير متصلة');
         showMessage('قاعدة البيانات غير متصلة', 'error');
         return;
     }
@@ -531,19 +662,35 @@ async function handleRegistration(e) {
         status: 'pending',
         created_at: new Date().toISOString()
     };
+    
+    console.log('📋 بيانات التسجيل:', registrationData);
 
     try {
         const { data, error } = await supabase
             .from('registrations')
             .insert([registrationData]);
 
-        if (error) throw error;
+        if (error) {
+            console.error('❌ خطأ في إدراج البيانات:', error);
+            throw error;
+        }
 
+        console.log('✅ تم إرسال طلب التسجيل بنجاح');
         showMessage('تم إرسال طلب التسجيل بنجاح! سيتم مراجعته قريباً.', 'success');
         registrationForm.reset();
+        
+        // Update tournament statuses after new registration
+        await updateTournamentStatuses();
+        
     } catch (error) {
         console.error('Error submitting registration:', error);
-        showMessage('حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.', 'error');
+        
+        let errorMessage = 'حدث خطأ أثناء إرسال الطلب. يرجى المحاولة مرة أخرى.';
+        if (error.message) {
+            errorMessage += '\nالتفاصيل: ' + error.message;
+        }
+        
+        showMessage(errorMessage, 'error');
     } finally {
         // Reset button state
         submitBtn.innerHTML = originalText;
@@ -645,15 +792,25 @@ function showMessage(text, type) {
     // Create new message
     const message = document.createElement('div');
     message.className = `message ${type}`;
-    message.textContent = text;
+    
+    // Handle multiline messages
+    if (text.includes('\n')) {
+        const lines = text.split('\n');
+        message.innerHTML = lines.map(line => `<div>${line}</div>`).join('');
+    } else {
+        message.textContent = text;
+    }
 
     // Insert message at the top of the page
-    const header = document.querySelector('.header');
-    if (header && header.nextSibling) {
-        document.body.insertBefore(message, header.nextSibling);
-    } else {
-        document.body.insertBefore(message, document.body.firstChild);
-    }
+    document.body.appendChild(message);
+    
+    // Position message
+    message.style.position = 'fixed';
+    message.style.top = '20px';
+    message.style.right = '20px';
+    message.style.zIndex = '9999';
+    message.style.maxWidth = '400px';
+    message.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
 
     // Auto remove after 5 seconds
     setTimeout(() => {
@@ -672,25 +829,6 @@ document.addEventListener('click', function(e) {
     }
 });
 
-// Test database connection
-async function testDatabaseConnection() {
-    try {
-        const { data, error } = await supabase
-            .from('registrations')
-            .select('count', { count: 'exact', head: true });
-        
-        if (error) {
-            console.error('Database connection test failed:', error);
-            showMessage('فشل في الاتصال بقاعدة البيانات: ' + error.message, 'error');
-        } else {
-            console.log('Database connection successful');
-            showMessage('تم الاتصال بقاعدة البيانات بنجاح', 'success');
-        }
-    } catch (error) {
-        console.error('Database test error:', error);
-        showMessage('خطأ في اختبار قاعدة البيانات', 'error');
-    }
-}
 // Smooth scroll for navigation
 function smoothScroll(target) {
     document.querySelector(target).scrollIntoView({
