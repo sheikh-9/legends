@@ -5,6 +5,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 };
 
 // Global variables
+let supabase;
 let isAdminLoggedIn = false;
 let currentFilter = 'pending';
 let currentMatchTab = 'league';
@@ -12,38 +13,108 @@ let currentParticipantTab = 'league';
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Check if Supabase is configured
-    console.log('Admin - Supabase URL:', SUPABASE_URL);
-    console.log('Admin - Supabase Key exists:', !!SUPABASE_ANON_KEY);
+    console.log('🛡️ تحميل لوحة الإدارة...');
     
-    try {
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('Supabase connected successfully');
-        
-        // Test connection
-        testAdminDatabaseConnection();
-    } catch (error) {
-        console.error('Failed to initialize Supabase:', error);
-        showMessage('خطأ في الاتصال بقاعدة البيانات', 'error');
-    }
+    // Initialize Supabase for admin
+    initializeAdminSupabase();
     
+    // Setup event listeners
     setupEventListeners();
 });
 
+// Initialize Supabase for admin
+function initializeAdminSupabase() {
+    // Get Supabase credentials
+    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://fgoylqtdqhzduuezctrf.supabase.co';
+    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+    
+    console.log('🔗 [إدارة] محاولة الاتصال بـ Supabase...');
+    console.log('📍 [إدارة] URL:', SUPABASE_URL);
+    console.log('🔑 [إدارة] Key exists:', !!SUPABASE_ANON_KEY);
+    
+    try {
+        if (typeof window.supabase === 'undefined') {
+            console.error('❌ [إدارة] مكتبة Supabase غير محملة!');
+            showMessage('خطأ: مكتبة قاعدة البيانات غير محملة', 'error');
+            return;
+        }
+        
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ [إدارة] تم إنشاء عميل Supabase بنجاح');
+        
+        // Test admin database connection
+        testAdminDatabaseConnection();
+        
+    } catch (error) {
+        console.error('❌ [إدارة] فشل في إنشاء عميل Supabase:', error);
+        showMessage('خطأ في الاتصال بقاعدة البيانات: ' + error.message, 'error');
+    }
+}
+
 // Test database connection for admin
 async function testAdminDatabaseConnection() {
+    if (!supabase) {
+        console.error('❌ [إدارة] عميل Supabase غير متاح');
+        return;
+    }
+    
+    console.log('🧪 [إدارة] اختبار الاتصال بقاعدة البيانات...');
+    
     try {
-        const { data, error } = await supabase
+        // Test registrations table
+        const { data: regData, error: regError } = await supabase
             .from('registrations')
             .select('count', { count: 'exact', head: true });
         
-        if (error) {
-            console.error('Admin database connection test failed:', error);
-        } else {
-            console.log('Admin database connection successful');
+        if (regError) {
+            console.error('❌ [إدارة] خطأ في جدول التسجيلات:', regError);
+            throw regError;
         }
+        
+        console.log('✅ [إدارة] جدول التسجيلات متاح');
+        
+        // Test tournaments table
+        const { data: tourData, error: tourError } = await supabase
+            .from('tournaments')
+            .select('count', { count: 'exact', head: true });
+        
+        if (tourError) {
+            console.error('❌ [إدارة] خطأ في جدول البطولات:', tourError);
+            throw tourError;
+        }
+        
+        console.log('✅ [إدارة] جدول البطولات متاح');
+        
+        // Test league standings
+        const { data: leagueData, error: leagueError } = await supabase
+            .from('league_standings')
+            .select('count', { count: 'exact', head: true });
+        
+        if (leagueError) {
+            console.error('❌ [إدارة] خطأ في جدول ترتيب الدوري:', leagueError);
+            throw leagueError;
+        }
+        
+        console.log('✅ [إدارة] جدول ترتيب الدوري متاح');
+        
+        // All tests passed
+        console.log('🎉 [إدارة] جميع الاختبارات نجحت! قاعدة البيانات متصلة ومضبوطة');
+        showMessage('✅ [إدارة] تم الاتصال بقاعدة البيانات بنجاح', 'success');
+        
     } catch (error) {
-        console.error('Admin database test error:', error);
+        console.error('💥 [إدارة] فشل اختبار قاعدة البيانات:', error);
+        showMessage('❌ [إدارة] فشل في الاتصال بقاعدة البيانات: ' + error.message, 'error');
+        
+        // Show detailed error info
+        if (error.code) {
+            console.error('🔍 [إدارة] كود الخطأ:', error.code);
+        }
+        if (error.details) {
+            console.error('🔍 [إدارة] تفاصيل الخطأ:', error.details);
+        }
+        if (error.hint) {
+            console.error('🔍 [إدارة] اقتراح الحل:', error.hint);
+        }
     }
 }
 // Setup Event Listeners
@@ -405,9 +476,9 @@ function displayRegistrations(registrations) {
 async function approveRegistration(id) {
     if (!supabase || !isAdminLoggedIn) return;
     
+    console.log('✅ [إدارة] محاولة الموافقة على التسجيل:', id);
+    
     try {
-        console.log('Admin approving registration with ID:', id);
-        
         const { error } = await supabase
             .from('registrations')
             .update({ 
@@ -417,16 +488,17 @@ async function approveRegistration(id) {
             .eq('id', String(id));
         
         if (error) {
-            console.error('Admin approval error:', error);
+            console.error('❌ [إدارة] خطأ في الموافقة:', error);
             throw error;
         }
         
+        console.log('✅ [إدارة] تم قبول التسجيل بنجاح');
         showMessage('تم قبول طلب التسجيل بنجاح', 'success');
         loadRegistrations();
         updatePendingBadge();
         
     } catch (error) {
-        console.error('Error approving registration:', error);
+        console.error('💥 [إدارة] خطأ في قبول الطلب:', error);
         showMessage('خطأ في قبول الطلب: ' + error.message, 'error');
     }
 }
@@ -434,9 +506,9 @@ async function approveRegistration(id) {
 async function rejectRegistration(id) {
     if (!supabase || !isAdminLoggedIn) return;
     
+    console.log('❌ [إدارة] محاولة رفض التسجيل:', id);
+    
     try {
-        console.log('Admin rejecting registration with ID:', id);
-        
         const { error } = await supabase
             .from('registrations')
             .update({ 
@@ -446,16 +518,17 @@ async function rejectRegistration(id) {
             .eq('id', String(id));
         
         if (error) {
-            console.error('Admin rejection error:', error);
+            console.error('❌ [إدارة] خطأ في الرفض:', error);
             throw error;
         }
         
+        console.log('✅ [إدارة] تم رفض التسجيل بنجاح');
         showMessage('تم رفض طلب التسجيل', 'success');
         loadRegistrations();
         updatePendingBadge();
         
     } catch (error) {
-        console.error('Error rejecting registration:', error);
+        console.error('💥 [إدارة] خطأ في رفض الطلب:', error);
         showMessage('خطأ في رفض الطلب: ' + error.message, 'error');
     }
 }
@@ -522,7 +595,10 @@ async function loadTournamentStats() {
         // Update status badges
         updateTournamentStatus('league', counts.league, 16);
         updateTournamentStatus('online', counts.online, 32);
-        updateTournamentStatus('offline', counts.offline, 16);
+        updateTournamentStatus('offline', count
+        )
+    }
+}s.offline, 16);
         
     } catch (error) {
         console.error('Error loading tournament stats:', error);
@@ -1078,10 +1154,6 @@ function showMessage(text, type) {
     // Insert message
     document.body.appendChild(message);
     
-    // Auto remove after 5 seconds
-    setTimeout(() => {
-        if (message && message.parentNode) {
-            message.remove();
         }
     }, 5000);
 }
