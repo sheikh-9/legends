@@ -1,6 +1,9 @@
 // Supabase Configuration
-const SUPABASE_URL = 'https://fgoylqtdqhzduuezctrf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+const SUPABASE_URL = 'https://vieqwfkpxwdwlchdvdmn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZXF3ZmtweHdkd2xjaGR2ZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMzQ1NTksImV4cCI6MjA3NTYxMDU1OX0.gQln3CMs3h2OrIljcvndImifrReHkOMhYLC7K5ZOyGg';
+
+const ADMIN_CREDENTIALS = {
+    username: 'fifa2026admin',
     password: 'fifa2026admin'
 };
 
@@ -25,8 +28,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize Supabase for admin
 function initializeAdminSupabase() {
     // Get Supabase credentials
-    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://fgoylqtdqhzduuezctrf.supabase.co';
-    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || document.querySelector('meta[name="supabase-url"]')?.content || 'https://vieqwfkpxwdwlchdvdmn.supabase.co';
+    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || document.querySelector('eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZXF3ZmtweHdkd2xjaGR2ZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMzQ1NTksImV4cCI6MjA3NTYxMDU1OX0.gQln3CMs3h2OrIljcvndImifrReHkOMhYLC7K5ZOyGg';
     
     console.log('🔗 [إدارة] محاولة الاتصال بـ Supabase...');
     console.log('📍 [إدارة] URL:', SUPABASE_URL);
@@ -100,6 +103,11 @@ async function testAdminDatabaseConnection() {
         // All tests passed
         console.log('🎉 [إدارة] جميع الاختبارات نجحت! قاعدة البيانات متصلة ومضبوطة');
         showMessage('✅ [إدارة] تم الاتصال بقاعدة البيانات بنجاح', 'success');
+        
+        // Show current database info
+        console.log('📊 [إدارة] معلومات قاعدة البيانات:');
+        console.log('🔗 [إدارة] URL:', SUPABASE_URL);
+        console.log('🆔 [إدارة] Project ID:', SUPABASE_URL.split('//')[1]?.split('.')[0]);
         
     } catch (error) {
         console.error('💥 [إدارة] فشل اختبار قاعدة البيانات:', error);
@@ -595,10 +603,7 @@ async function loadTournamentStats() {
         // Update status badges
         updateTournamentStatus('league', counts.league, 16);
         updateTournamentStatus('online', counts.online, 32);
-        updateTournamentStatus('offline', count
-        )
-    }
-}s.offline, 16);
+        updateTournamentStatus('offline', counts.offline, 16);
         
     } catch (error) {
         console.error('Error loading tournament stats:', error);
@@ -1154,6 +1159,10 @@ function showMessage(text, type) {
     // Insert message
     document.body.appendChild(message);
     
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (message.parentNode) {
+            message.remove();
         }
     }, 5000);
 }
