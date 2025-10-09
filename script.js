@@ -1,6 +1,6 @@
 // Supabase Configuration
-const SUPABASE_URL = 'https://fgoylqtdqhzduuezctrf.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+const SUPABASE_URL = 'https://vieqwfkpxwdwlchdvdmn.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZXF3ZmtweHdkd2xjaGR2ZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMzQ1NTksImV4cCI6MjA3NTYxMDU1OX0.gQln3CMs3h2OrIljcvndImifrReHkOMhYLC7K5ZOyGg';
     console.log('Supabase URL:', SUPABASE_URL);
     console.log('Supabase Key exists:', !!SUPABASE_ANON_KEY);
     
@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize Supabase
 function initializeSupabase() {
     // Get Supabase credentials from environment or use defaults
-    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || 'https://fgoylqtdqhzduuezctrf.supabase.co';
-    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || document.querySelector('meta[name="supabase-url"]')?.content || 'https://fgoylqtdqhzduuezctrf.supabase.co';
+    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || document.querySelector('meta[name="supabase-key"]')?.content || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
     
     console.log('🔗 محاولة الاتصال بـ Supabase...');
     console.log('📍 URL:', SUPABASE_URL);
@@ -75,108 +75,58 @@ function initializeSupabase() {
 async function testDatabaseConnection() {
     if (!supabase) {
         console.error('❌ عميل Supabase غير متاح');
+        showMessage('❌ عميل Supabase غير متاح - تحقق من الاتصال', 'error');
         return;
     }
     
     console.log('🧪 اختبار الاتصال بقاعدة البيانات...');
     
     try {
-        // Test connection with a simple query first
-        console.log('🔍 اختبار الاتصال الأساسي...');
-        const { data: connectionTest, error: connectionError } = await supabase
-            .from('tournaments')
-            .select('count')
-            .limit(1);
+        // Test each table individually
+        const tables = [
+            'tournaments',
+            'registrations', 
+            'league_standings',
+            'league_matches',
+            'knockout_matches',
+            'tournament_participants'
+        ];
         
-        if (connectionError) {
-            console.error('❌ فشل الاتصال الأساسي:', connectionError);
+        let missingTables = [];
+        
+        for (const table of tables) {
+            console.log(`🔍 اختبار جدول: ${table}`);
             
-            // If tables don't exist, try to create them
-            if (connectionError.code === '42P01') {
-                console.log('🔧 الجداول غير موجودة، محاولة إنشائها...');
-                await createTablesIfNotExist();
-                return;
+            const { data, error } = await supabase
+                .from(table)
+                .select('count', { count: 'exact', head: true });
+            
+            if (error) {
+                console.error(`❌ خطأ في جدول ${table}:`, error);
+                if (error.code === '42P01') {
+                    missingTables.push(table);
+                } else {
+                    throw error;
+                }
+            } else {
+                console.log(`✅ جدول ${table} متاح`);
             }
-            throw connectionError;
         }
         
-        console.log('✅ الاتصال الأساسي نجح');
-        
-        // Test 1: Check if we can connect to registrations table
-        const { data: regData, error: regError } = await supabase
-            .from('registrations')
-            .select('count', { count: 'exact', head: true });
-        
-        if (regError) {
-            console.error('❌ خطأ في جدول التسجيلات:', regError);
-            throw regError;
+        if (missingTables.length > 0) {
+            console.error('❌ الجداول التالية غير موجودة:', missingTables);
+            showDatabaseSetupInstructions(missingTables);
+            return;
         }
-        
-        console.log('✅ جدول التسجيلات متاح');
-        
-        // Test 2: Check tournaments table
-        const { data: tourData, error: tourError } = await supabase
-            .from('tournaments')
-            .select('count', { count: 'exact', head: true });
-        
-        if (tourError) {
-            console.error('❌ خطأ في جدول البطولات:', tourError);
-            throw tourError;
-        }
-        
-        console.log('✅ جدول البطولات متاح');
-        
-        // Test 3: Check league standings
-        const { data: leagueData, error: leagueError } = await supabase
-            .from('league_standings')
-            .select('count', { count: 'exact', head: true });
-        
-        if (leagueError) {
-            console.error('❌ خطأ في جدول ترتيب الدوري:', leagueError);
-            throw leagueError;
-        }
-        
-        console.log('✅ جدول ترتيب الدوري متاح');
-        
-        // Test 4: Check league matches
-        const { data: matchesData, error: matchesError } = await supabase
-            .from('league_matches')
-            .select('count', { count: 'exact', head: true });
-        
-        if (matchesError) {
-            console.error('❌ خطأ في جدول مباريات الدوري:', matchesError);
-            throw matchesError;
-        }
-        
-        console.log('✅ جدول مباريات الدوري متاح');
-        
-        // Test 5: Check knockout matches
-        const { data: knockoutData, error: knockoutError } = await supabase
-            .from('knockout_matches')
-            .select('count', { count: 'exact', head: true });
-        
-        if (knockoutError) {
-            console.error('❌ خطأ في جدول مباريات الإقصاء:', knockoutError);
-            throw knockoutError;
-        }
-        
-        console.log('✅ جدول مباريات الإقصاء متاح');
-        
-        // Test 6: Check tournament participants
-        const { data: participantsData, error: participantsError } = await supabase
-            .from('tournament_participants')
-            .select('count', { count: 'exact', head: true });
-        
-        if (participantsError) {
-            console.error('❌ خطأ في جدول المشاركين:', participantsError);
-            throw participantsError;
-        }
-        
-        console.log('✅ جدول المشاركين متاح');
         
         // All tests passed
-        console.log('🎉 جميع الاختبارات نجحت! قاعدة البيانات متصلة ومضبوطة (6 جداول)');
+        console.log('🎉 جميع الاختبارات نجحت! قاعدة البيانات متصلة ومضبوطة');
         showMessage('✅ تم الاتصال بقاعدة البيانات بنجاح', 'success');
+        
+        // Show current database info
+        console.log('📊 معلومات قاعدة البيانات:');
+        console.log('🔗 URL:', SUPABASE_URL);
+        console.log('🆔 Project ID:', SUPABASE_URL.split('//')[1]?.split('.')[0]);
         
         // Load initial data
         await loadInitialData();
@@ -198,21 +148,26 @@ async function testDatabaseConnection() {
     }
 }
 
-// Create tables if they don't exist
-async function createTablesIfNotExist() {
-    console.log('🔧 محاولة إنشاء الجداول المطلوبة...');
-    showMessage('⚠️ الجداول غير موجودة. يرجى تطبيق migration في Supabase أولاً', 'error');
+// Show database setup instructions
+function showDatabaseSetupInstructions(missingTables) {
+    console.log('📋 تعليمات إعداد قاعدة البيانات:');
+    console.log('الجداول المفقودة:', missingTables);
     
-    // Show instructions
-    console.log(`
-📋 تعليمات إنشاء قاعدة البيانات:
-1. اذهب إلى Supabase Dashboard
-2. اختر مشروعك
-3. اذهب إلى SQL Editor
-4. انسخ محتوى ملف: supabase/migrations/create_complete_tournament_system.sql
-5. شغل الكود
-6. حدث الصفحة
-    `);
+    const instructions = `
+🔧 لإصلاح قاعدة البيانات:
+
+1️⃣ اذهب إلى: https://supabase.com/dashboard
+2️⃣ اختر مشروعك
+3️⃣ اذهب إلى SQL Editor
+4️⃣ انسخ محتوى الملف: supabase/migrations/create_complete_tournament_system.sql
+5️⃣ شغل الكود في SQL Editor
+6️⃣ حدث هذه الصفحة
+
+📁 الملف موجود في مجلد المشروع
+`;
+    
+    showMessage('⚠️ قاعدة البيانات غير مضبوطة - راجع Console للتعليمات', 'error');
+    console.log(instructions);
 }
 
 // Load initial data after successful connection
