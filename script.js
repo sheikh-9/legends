@@ -45,8 +45,8 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize Supabase
 function initializeSupabase() {
     // Get Supabase credentials from environment or use defaults
-    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || document.querySelector('meta[name="supabase-url"]')?.content || 'https://fgoylqtdqhzduuezctrf.supabase.co';
-    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || document.querySelector('meta[name="supabase-key"]')?.content || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZnb3lscXRkcWh6ZHV1ZXpjdHJmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg5MTc1OTksImV4cCI6MjA3NDQ5MzU5OX0.FPjgccBsg1MFD5ntRZSC4DOO-t9ClMLOzO3lq8aj4LQ';
+    const SUPABASE_URL = import.meta.env?.VITE_SUPABASE_URL || document.querySelector('meta[name="supabase-url"]')?.content || 'https://vieqwfkpxwdwlchdvdmn.supabase.co';
+    const SUPABASE_ANON_KEY = import.meta.env?.VITE_SUPABASE_ANON_KEY || document.querySelector('meta[name="supabase-key"]')?.content || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZpZXF3ZmtweHdkd2xjaGR2ZG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMzQ1NTksImV4cCI6MjA3NTYxMDU1OX0.gQln3CMs3h2OrIljcvndImifrReHkOMhYLC7K5ZOyGg';
     
     console.log('🔗 محاولة الاتصال بـ Supabase...');
     console.log('📍 URL:', SUPABASE_URL);
